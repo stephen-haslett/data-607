@@ -1,0 +1,36 @@
+---
+title: "Stephen Haslett Data 607 Week1 Assignment - Loading Data into a Data Frame"
+author: "Stephen Haslett"
+date: "9/1/2019"
+output: html_document
+---
+
+Load the dplyr library and pull in the mushroom dataset from UCI. 
+```
+library(dplyr)
+table_data <- "https://archive.ics.uci.edu/ml/machine-learning-databases/mushroom/agaricus-lepiota.data"
+mushroom_data <- read.table(table_data, sep=',', stringsAsFactors=FALSE)
+head(mushroom_data)
+```
+
+Pull out specific columns from the dataset and rename them to something more meaningful.
+```
+mushroom_data <- mushroom_data %>%
+  select(Type = V1, CapShape = V2, Population = V22, Habitat = V23)
+
+lapply(mushroom_data, function(x) table(x))
+```
+
+Replace the abbrevations in the data with meaningful names.
+```
+mushroom_data <- mushroom_data %>%
+  mutate(Type = recode(Type, p="poisonous", e="edible"),
+         CapShape = recode(CapShape, b="bell", c="conical", x="convex", f="flat", k="knobbed", s="sunken"),
+         Population = recode(Population, a="abundant", c="clustered", n="numerous", s="scattered", v="several", y="solitary"),
+         Habitat = recode(Habitat, g="grasses", l="leaves", m="meadows", p="pathes", u="urban", w="waste", d="woods"))
+```
+
+Display sample data from the new data frame.
+```
+head(mushroom_data)
+```
