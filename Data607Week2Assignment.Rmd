@@ -1,0 +1,39 @@
+---
+title: "Data 607 Week2 Assignment"
+author: "Stephen Haslett"
+date: "9/8/2019"
+output: html_document
+---
+
+# Data 607 Week2 Assignment
+
+Choose six recent popular movies. Ask at least five people that you know (friends, family, classmates, imaginary friends) to rate each of these movie that they have seen on a scale of 1 to 5.  Take the results (observations) and store them in a SQL database.  Load the information into an R dataframe.
+
+####Load neccessary libraries and connect to the database.
+```
+library(RMySQL)
+library(dplyr)
+library(dbplyr)
+movie_ratings <- DBI::dbConnect(RMySQL::MySQL(), user="root", password="", dbname="movies", host="127.0.0.1")
+```
+
+####Query the columns in the movie_ratings database table and create the dataframe.
+```
+movies <- tbl(movie_ratings, sql("SELECT mid, movie_title, rating FROM movie_ratings"))
+movie_ratings_dataframe <- as.data.frame(movies)
+```
+
+####Display the results in a bar chart.
+```
+library(ggplot2)
+theme_set(theme_classic())
+ggplot(movie_ratings_dataframe,
+       aes(x = reorder(movie_title, rating), y = rating, fill = movie_title),
+       xlab = 'Rating',  col = I("grey")) + geom_bar(stat = "identity") + 
+       ggtitle("Movie Ratings") +  labs(x = "Movie Title")
+```
+
+####Disconnent from the database.
+```
+dbDisconnect(movie_ratings)
+```
