@@ -10,11 +10,18 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-library(caret)
-library(kernlab)
-library(doMC)
-library(tibble)
+library(tm)
+library(knitr)
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+library(kableExtra)
+#@todo CONFIRM IF BELOW LIBRARIES ARE STILL NEEDED.
+library(readr)
 library(tidyverse)
+
+spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam_2"
+ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
 ```
 ## Assignment Overview
 It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
@@ -23,30 +30,108 @@ For this project, you can start with a spam/ham dataset, then predict the class 
 
 ### List the first 6 Ham training files contained within the "spam_ham_training/easy_ham" directory.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-ham_training_files <- list.files(path="/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham")
+ham_training_files <- list.files(ham_directory)
 head(ham_training_files)
 ```
 
 
 ### List the first 6 Spam training files contained within the "spam_ham_training/spam_2" directory.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-spam_training_files <- list.files(path="/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam_2")
+spam_training_files <- list.files(spam_directory)
 head(spam_training_files)
 ```
 
-### Load the files in a dataframe for analysis within R.
+### Define a function that retrieves data from the training files and returns a corpus that we can use for further analysis.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-training_files <- tibble()
-file_directories <- c("./spam_2", "./easy_ham_2")
-email_categories <-c("spam", "ham")
-combined_files <- c(spam_training_files, ham_training_files)
+#' Retrieves data from spam and ham training files.
+#'
+#' ADD DESCRITION HERE!!!
+#'
+#' @param directory String: The path to the ham/spam training files directory.
+#' @param max_results Numeric: the maximum number of results to return.
+#'
+#' @return A corpus of training file data.
+#'
+fetch_training_file_data <- function(directory, max_results = 20) {
+  training_files <- list.files(directory, full.names = TRUE)
+  documents <- c()
+  count <- 0
 
-for (count in 1: length(file_directories)) {
-  email_category <- email_categories[count]
-  ff <- tibble(file = dir(file_directories[count],  full.names = TRUE)) %>% mutate(text = map(file, read_lines)) %>%
-                transmute(id = basename(file), type = type, text) %>%
-                unnest(text)
-                training_files <- bind_rows(training_files, ff)
+  for (file in training_files) {
+    if (count < max_results) {
+      document <- readLines(file)
+      documents <- c(documents, document)
+      count <- count + 1
+    }
+  }
+
+  # Clean up the data.
+  training_data <- Corpus(VectorSource(documents))
+  training_data <- tm_map(training_data, content_transformer(function(x) iconv(x, "UTF-8", sub="byte")))
+  training_data <- tm_map(training_data, PlainTextDocument)
+  training_data <- tm_map(training_data, content_transformer(tolower))
+  training_data <- tm_map(training_data, removePunctuation)
+  training_data <- tm_map(training_data, removeNumbers)
+  training_data <- tm_map(training_data, content_transformer(removeWords), stopwords("english"))  
+
+  return(training_data)
 }
-head(training_files)
+
+```
+
+
+###Create the Spam and Ham data frames from the returned corpus data.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+# Create the Ham dataframe.
+ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
+ham <- fetch_training_file_data(ham_directory, 60)
+
+ham_term_matrix <- TermDocumentMatrix(ham)
+ham_term_matrix <- removeSparseTerms(ham_term_matrix, 1 - (10 / length(ham)))
+
+ham_ordered <- as.matrix(ham_term_matrix)
+frequency <- colSums(ham_ordered)
+frequency <- sort(frequency, decreasing = T)
+ham_data <- head(frequency, 15)
+kable(table_freq, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  column_spec(1, bold = T)
+
+
+ham_data <- as.data.frame(as.table(term_matrix), stringsAsFactors = F)
+colnames(ham_data) <- c('Terms', 'Docs', 'Frequency')
+
+ham_data <- subset(ham_data, select = -c(2)) %>%
+  select(Terms, Frequency) %>%
+  group_by(Terms) %>%
+  summarise(Frequency = sum(as.numeric(Frequency)))
+
+ham_data %>% head(100) %>% kable(format='html') %>% kable_styling(bootstrap_options = "striped") %>% column_spec(1, bold = T)
+nrow(ham_data)
+```
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+# Create the Spam dataframe.
+spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam_2"
+spam <- fetch_training_file_data(spam_directory, 60)
+
+spam_term_matrix <- TermDocumentMatrix(spam)
+spam_term_matrix <- removeSparseTerms(spam_term_matrix, 1 - (10 / length(spam)))
+spam_data <- as.data.frame(as.table(spam_term_matrix), stringsAsFactors = F)
+spam_data$Type <- "Spam"
+colnames(spam_data) <- c('Terms', 'Type', 'Frequency', 'TYPE_SPAM')
+
+spam_data <- subset(spam_data, select = -c(2)) %>%
+  select(Terms, Frequency) %>%
+  group_by(Terms) %>%
+  summarise(Frequency = sum(as.numeric(Frequency)))
+
+spam_data %>% head(100) %>% kable(format='html') %>% kable_styling(bootstrap_options = "striped") %>% column_spec(1, bold = T)
+nrow(spam_data)
+```
+
+
+###Merge the Spam and Ham data frames together.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+
 ```
