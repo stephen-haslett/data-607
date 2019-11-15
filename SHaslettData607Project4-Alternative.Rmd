@@ -1,0 +1,175 @@
+---
+title: "DATA 607 Project 4 - Document Classification"
+author: "Stephen Haslett"
+date: "10/28/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(tm)
+library(knitr)
+library(dplyr)
+library(tidytext)
+library(ggplot2)
+library(kableExtra)
+library(wordcloud)
+library(tidyverse)
+library(readtext)
+
+spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam"
+ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
+```
+## Assignment Overview
+It can be useful to be able to classify new "test" documents using already classified "training" documents.  A common example is using a corpus of labeled spam and ham (non-spam) e-mails to predict whether or not a new document is spam.  
+
+For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder).   One example corpus:   https://spamassassin.apache.org/old/publiccorpus/
+
+### List the first 6 Ham training files contained within the "spam_ham_training/easy_ham" directory.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+ham_training_files <- list.files(ham_directory)
+head(ham_training_files)
+```
+
+
+### List the first 6 Spam training files contained within the "spam_ham_training/spam" directory.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+spam_training_files <- list.files(spam_directory)
+head(spam_training_files)
+```
+
+### Define a function that removes email headers so that we are left with clean data for analysis.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+strip_email_headers <- function(email) {
+  message <- str_split(email,"\n\n") %>% unlist()
+  email_body_content <- paste(message[2:length(message)], collapse = ' ')
+
+  return(email_body_content)
+}
+```
+
+### Define a function that retrieves data from the training files and returns a corpus that we can use for further analysis.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+#' Retrieves data from spam and ham training files.
+#'
+#' ADD DESCRITION HERE!!!
+#'
+#' @param directory String: The path to the ham/spam training files directory.
+#' @param max_results Numeric: the maximum number of results to return.
+#'
+#' @return A corpus of training file data.
+#'
+fetch_training_file_data <- function(directory, max_results = 20) {
+  training_files <- list.files(directory)
+  message_content <- NA
+  count <- 1
+
+  for (file in 1:length(training_files)) {
+    if (count < max_results) {
+      file_path <- paste0(directory, '/', training_files[file])
+      training_email <-suppressWarnings(warning(readtext(file_path, TRUE)))
+      training_email_body <- strip_email_headers(training_email)
+      training_email_body <- gsub("<.*?>", " ", training_email_body)
+      message <- list(paste(training_email_body, collapse = '\n'))
+      message_content <- c(message_content, message)
+      count <- count + 1
+    }
+  }
+  
+  training_emails <- data.frame()
+  training_emails <- as.data.frame(unlist(message_content), stringsAsFactors = FALSE)
+  colnames(training_emails) <- c("message")
+
+  # Create a corpus from the email content and clean the data for analysis purposes.
+  training_data <- VCorpus(VectorSource(training_emails))
+  training_data <- tm_map(training_data, content_transformer(function(x) iconv(x, "UTF-8", "ASCII")))
+  training_data <- tm_map(training_data, content_transformer(tolower))
+  training_data <- tm_map(training_data, stripWhitespace)
+  training_data <- tm_map(training_data, PlainTextDocument)
+  training_data <- tm_map(training_data, removePunctuation)
+  training_data <- tm_map(training_data, removeNumbers)
+  training_data <- tm_map(training_data, content_transformer(removeWords), stopwords("english"))   
+  training_data <- tm_map(training_data, removeWords, stopwords("english")) 
+
+  return(training_data)
+}
+```
+
+
+###Output the intial Raw count of Ham term frequencies.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+# Create the Ham dataframe.
+ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
+ham <- fetch_training_file_data(ham_directory, 15)
+
+ham_term_matrix <- DocumentTermMatrix(ham)
+ham_term_matrix <- removeSparseTerms(ham_term_matrix, 0.99)
+ham_ordered <- as.matrix(ham_term_matrix)
+ham_term_frequency <- colSums(ham_ordered)
+ham_term_frequency <- sort(ham_term_frequency, decreasing = T)
+ham_data <- head(ham_term_frequency, 35)
+kable(ham_data, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  column_spec(1, bold = T)
+```
+
+###Bar plot for ham.
+```{r, message=FALSE, warning=FALSE}
+ham_term_freq <- data.frame(Term = names(ham_term_frequency), Frequency = ham_term_frequency)
+ham_term_plot <- ggplot(subset(ham_term_freq, Frequency > 1500), aes(x = reorder(Term, - Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = '#4CAF50') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  theme(panel.background = element_rect(fill = '#FFFFFF'))
+
+ham_term_plot
+```
+
+###Ham Word Cloud
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+ham_term_frequency[1:50]
+ham_terms <- names(ham_term_frequency)
+wordcloud(ham_terms[1:50], ham_term_frequency[1:50])
+```
+
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+# Create the Spam dataframe.
+spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam"
+spam <- fetch_training_file_data(spam_directory, 10)
+
+spam_term_matrix <- DocumentTermMatrix(spam)
+spam_term_matrix <- removeSparseTerms(spam_term_matrix, 0.99)
+spam_ordered <- as.matrix(spam_term_matrix)
+spam_term_frequency <- colSums(spam_ordered)
+spam_term_frequency <- sort(spam_term_frequency, decreasing = T)
+spam_data <- head(spam_term_frequency, 35)
+kable(spam_data, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  column_spec(1, bold = T)
+```
+
+###Bar plot for spam.
+```{r, message=FALSE, warning=FALSE}
+spam_term_freq <- data.frame(Term = names(spam_term_frequency), Frequency = spam_term_frequency)
+spam_term_plot <- ggplot(subset(spam_term_freq, Frequency > 1300), aes(x = reorder(Term, - Frequency), y = Frequency)) +
+  geom_bar(stat = "identity", fill = '#DC143C') +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
+  theme(panel.background = element_rect(fill = '#FFFFFF'))
+
+spam_term_plot
+```
+
+##Spam Word Cloud
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+spam_term_frequency[1:50]
+spam_terms <- names(spam_term_frequency)
+wordcloud(spam_terms[1:50], spam_term_frequency[1:50])
+```
+
+###Merge the Spam and Ham data frames together.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+
+```
