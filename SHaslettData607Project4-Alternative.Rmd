@@ -119,7 +119,7 @@ kable(ham_data, "html", escape = F) %>%
 ###Bar plot for ham.
 ```{r, message=FALSE, warning=FALSE}
 ham_term_freq <- data.frame(Term = names(ham_term_frequency), Frequency = ham_term_frequency)
-ham_term_plot <- ggplot(subset(ham_term_freq, Frequency > 1500), aes(x = reorder(Term, - Frequency), y = Frequency)) +
+ham_term_plot <- ggplot(subset(ham_term_freq, Frequency > 5), aes(x = reorder(Term, - Frequency), y = Frequency)) +
   geom_bar(stat = "identity", fill = '#4CAF50') +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
   theme(panel.background = element_rect(fill = '#FFFFFF'))
@@ -154,7 +154,7 @@ kable(spam_data, "html", escape = F) %>%
 ###Bar plot for spam.
 ```{r, message=FALSE, warning=FALSE}
 spam_term_freq <- data.frame(Term = names(spam_term_frequency), Frequency = spam_term_frequency)
-spam_term_plot <- ggplot(subset(spam_term_freq, Frequency > 1300), aes(x = reorder(Term, - Frequency), y = Frequency)) +
+spam_term_plot <- ggplot(subset(spam_term_freq, Frequency > 10), aes(x = reorder(Term, - Frequency), y = Frequency)) +
   geom_bar(stat = "identity", fill = '#DC143C') +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) + 
   theme(panel.background = element_rect(fill = '#FFFFFF'))
