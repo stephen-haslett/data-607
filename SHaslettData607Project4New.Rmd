@@ -10,6 +10,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
+#@TODO WEED OUT UNUSED LIBRARIES!!!!
 library(tm)
 library(knitr)
 library(dplyr)
@@ -20,6 +21,9 @@ library(wordcloud)
 library(tidyverse)
 library(readtext)
 library(caTools)
+library(randomForest)
+library(e1071)
+library(caret)
 
 spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam"
 ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
@@ -91,10 +95,20 @@ fetch_training_file_data <- function(directory, type) {
     count <- count + 1
   }
   
+  # When we perform our prediction analysis of the data, the randomForest() function expects a
+  # numeric label, so we create a new column called "document_class", and populate it with
+  # numeric values based on the value of the "type" parameter (0 for ham, 1 for spam).
+  if (type == 'ham') {
+    document_class <- 0
+  } else if (type == 'spam') {
+    document_class <- 1
+  }
+
   training_emails <- data.frame()
   training_emails <- as.data.frame(unlist(message_content), stringsAsFactors = FALSE)
-  training_emails$class <- type
-  colnames(training_emails) <- c('message', 'message_type')
+  training_emails$message_type <- type
+  training_emails$document_class <- document_class
+  colnames(training_emails) <- c('message', 'message_type', 'document_class')
  
   return (training_emails)
 }
@@ -221,14 +235,36 @@ combined_term_matrix <- DocumentTermMatrix(combined_corpus)
 combined_term_matrix <- removeSparseTerms(combined_term_matrix, 0.99)
 
 combined_dataset = as.data.frame(as.matrix(combined_term_matrix))
-combined_dataset$message_type <- combined_dataframe$message_type
+combined_dataset$document_class <- combined_dataframe$document_class
+
 ```
 
 ###Randomize the dataset and split it into 2 seperate datasets - Training and Testing.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 randomized_dataset <- combined_dataset[sample(c(1:length(combined_dataset)))]
 
-split <- sample.split(randomized_dataset$message_type, SplitRatio = 0.8)
+split <- sample.split(randomized_dataset$document_class, SplitRatio = 0.8)
 training_dataset <- subset(randomized_dataset, split == TRUE)
 testing_dataset = subset(randomized_dataset, split == FALSE)
+```
+
+##Training and Testing
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+sample_size <- ncol(training_dataset) -1
+classification <- randomForest(x = training_dataset[-sample_size], y = training_dataset$document_class, ntree = 3)
+
+spam_prediction = predict(classification, newdata = testing_dataset[-sample_size])
+
+confusion_matrix <- table(spam_prediction > 0, testing_dataset$document_class)
+colnames(confusion_matrix) <- c('HAM', 'SPAM')
+
+confusion_matrix
+```
+
+
+##Calculate the accuracy of the model.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+success <- confusion_matrix['TRUE', 2] + confusion_matrix['FALSE', 1]
+accuracy_percentage <- success / nrow(testing_dataset) * 100
+accuracy_percentage
 ```
