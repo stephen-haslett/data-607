@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-#@TODO WEED OUT UNUSED LIBRARIES!!!!
 library(tm)
 library(knitr)
 library(dplyr)
@@ -22,8 +21,6 @@ library(tidyverse)
 library(readtext)
 library(caTools)
 library(randomForest)
-library(e1071)
-library(caret)
 
 spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam"
 ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
@@ -34,7 +31,7 @@ It can be useful to be able to classify new "test" documents using already class
 
 For this project, you can start with a spam/ham dataset, then predict the class of new documents (either withheld from the training dataset or from another source such as your own spam folder). One example corpus: https://spamassassin.apache.org/old/publiccorpus/
 
-####List the first 6 Ham training files contained within the "spam_ham_training/easy_ham" directory.
+####List the first 6 Ham files in the "spam_ham_training/easy_ham" directory.
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 ham_training_files <- list.files(ham_directory)
@@ -42,14 +39,15 @@ head(ham_training_files)
 ```
 
 
-####List the first 6 Spam training files contained within the "spam_ham_training/spam" directory.
+####List the first 6 Spam files in the "spam_ham_training/spam" directory.
 
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 spam_training_files <- list.files(spam_directory)
 head(spam_training_files)
 ```
 
-### Define a function that removes email headers so that we are left with clean data for analysis.
+####Define a function that removes email headers so that we are left with clean data for analysis.
+
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 #' Strips header data from emails.
 #'
@@ -68,7 +66,8 @@ strip_email_headers <- function(email) {
 }
 ```
 
-### Define a function that retrieves data from the training files and returns a data frame that we can use for further analysis.
+####Define a function that retrieves data from the training files and returns a data frame that we can use for further analysis.
+
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 #' Retrieves data from spam and ham training files.
 #'
@@ -114,7 +113,7 @@ fetch_training_file_data <- function(directory, type) {
 }
 ```
 
-
+####Define a function that converts email dataframes to corpuses.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 #' Converts spam/ham data frames to corpuses.
 #'
@@ -147,8 +146,7 @@ create_training_corpus <- function(email_data, type) {
 }
 ```
 
-
-###Output the intial Raw count of Ham term frequencies.
+####Calculate the frequency of ham terms and display them in a table.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 # Create the Ham dataframe.
 ham_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/easy_ham"
@@ -168,8 +166,7 @@ kable(ham_data, "html", escape = F) %>%
   column_spec(1, bold = T)
 ```
 
-
-###Bar plot for ham.
+####Display ham term frequencies in a bar plot.
 ```{r, message=FALSE, warning=FALSE}
 ham_term_freq <- data.frame(Term = names(ham_term_frequency), Frequency = ham_term_frequency)
 ham_term_plot <- ggplot(subset(ham_term_freq, Frequency > 500), aes(x = reorder(Term, - Frequency), y = Frequency)) +
@@ -180,14 +177,13 @@ ham_term_plot <- ggplot(subset(ham_term_freq, Frequency > 500), aes(x = reorder(
 ham_term_plot
 ```
 
-###Ham Word Cloud
+####Display ham term frequencies in a word cloud.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-ham_term_frequency[1:50]
 ham_terms <- names(ham_term_frequency)
 wordcloud(ham_terms[1:50], ham_term_frequency[1:50], random.color = TRUE, colors = palette())
 ```
 
-
+####Calculate the frequency of spam terms and display them in a table.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 # Create the Spam dataframe.
 spam_directory <- "/Users/stephenhaslett/Data607/data_607_project_4/spam_ham_training/spam"
@@ -207,7 +203,7 @@ kable(spam_data, "html", escape = F) %>%
   column_spec(1, bold = T)
 ```
 
-###Bar plot for spam.
+####Display spam term frequencies in a bar plot.
 ```{r, message=FALSE, warning=FALSE}
 spam_term_freq <- data.frame(Term = names(spam_term_frequency), Frequency = spam_term_frequency)
 spam_term_plot <- ggplot(subset(spam_term_freq, Frequency > 500), aes(x = reorder(Term, - Frequency), y = Frequency)) +
@@ -218,15 +214,14 @@ spam_term_plot <- ggplot(subset(spam_term_freq, Frequency > 500), aes(x = reorde
 spam_term_plot
 ```
 
-
-##Spam Word Cloud
+####Display spam term frequencies in a word cloud.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
-spam_term_frequency[1:50]
 spam_terms <- names(spam_term_frequency)
 wordcloud(spam_terms[1:50], spam_term_frequency[1:50], random.color = TRUE, colors = palette())
 ```
 
-###Merge the Spam and Ham dataframes together.
+
+####Prepare the data for prediction analysis by merging the Spam and Ham dataframes together.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 combined_dataframe <- rbind(spam_dataframe, ham_dataframe)
 combined_corpus <- create_training_corpus(combined_dataframe$message, 'combined') 
@@ -236,10 +231,9 @@ combined_term_matrix <- removeSparseTerms(combined_term_matrix, 0.99)
 
 combined_dataset = as.data.frame(as.matrix(combined_term_matrix))
 combined_dataset$document_class <- combined_dataframe$document_class
-
 ```
 
-###Randomize the dataset and split it into 2 seperate datasets - Training and Testing.
+####Randomize the newly combined dataframe and split it into 2 seperate datasets - Training and Testing.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 randomized_dataset <- combined_dataset[sample(c(1:length(combined_dataset)))]
 
@@ -248,7 +242,7 @@ training_dataset <- subset(randomized_dataset, split == TRUE)
 testing_dataset = subset(randomized_dataset, split == FALSE)
 ```
 
-##Training and Testing
+####Perform the prediction analysis using the Random Forest model.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 sample_size <- ncol(training_dataset) -1
 classification <- randomForest(x = training_dataset[-sample_size], y = training_dataset$document_class, ntree = 3)
@@ -262,9 +256,10 @@ confusion_matrix
 ```
 
 
-##Calculate the accuracy of the model.
+####Calculate the accuracy of the model.
 ```{r, eval=TRUE, message=FALSE, warning=FALSE}
 success <- confusion_matrix['TRUE', 2] + confusion_matrix['FALSE', 1]
 accuracy_percentage <- success / nrow(testing_dataset) * 100
-accuracy_percentage
+accuracy <- round(accuracy_percentage, 2)
+paste('Our prediction model has an accuracy of ', accuracy, '%.', sep = '')
 ```
