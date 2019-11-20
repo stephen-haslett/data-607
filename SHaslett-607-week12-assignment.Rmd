@@ -1,0 +1,79 @@
+---
+title: "Week 12 Assignment - NoSQL Migration"
+author: "Stephen Haslett"
+date: "11/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(RMySQL)
+library(mongolite)
+```
+
+##Assignment Description
+For this assignment, you should take information from a relational database and migrate it to a NoSQL database of your own choosing.
+
+For the relational database, you might use the flights database, the tb database, the "data skills" database your team created for Project 3, or another database of your own choosing or creation.
+
+For the NoSQL database, you may use MongoDB (which we introduced in week 7), Neo4j, or another NoSQL database of your choosing.
+
+Your migration process needs to be reproducible. R code is encouraged, but not required. You should also briefly describe the advantages and disadvantages of storing the data in a relational database vs. your NoSQL database.
+
+###Step 1 - Import the MYSQL flights database data into R.
+
+
+####Connect to the MYSQL Flights database.
+```{r, warning=FALSE, message=FALSE}
+# Open the database connection and list the database tables. 
+connection <- dbConnect(RMySQL::MySQL(), user = 'root', password = '', dbname = 'flights', host = 'localhost')
+tables <- dbListTables(connection)
+tables
+```
+
+
+####Import the MYSQL table data into R, and store it in dataframes (one per database table).
+```{r, warning=FALSE, message=FALSE}
+airlines <- dbReadTable(connection, 'airlines')
+airports <- dbReadTable(connection, 'airports')
+flights <- dbReadTable(connection, 'flights')
+planes <- dbReadTable(connection, 'planes')
+weather <- dbReadTable(connection, 'weather')
+
+# Close the database connection.
+dbDisconnect(connection)
+```
+
+
+####Confirm that the database table data is now available in R.
+```{r, warning=FALSE, message=FALSE}
+head(airlines)
+```
+
+```{r, warning=FALSE, message=FALSE}
+head(airports)
+```
+
+```{r, warning=FALSE, message=FALSE}
+head(flights)
+```
+
+```{r, warning=FALSE, message=FALSE}
+head(planes)
+```
+
+```{r, warning=FALSE, message=FALSE}
+head(weather)
+```
+
+
+###Step 2 - Import the Data into MongoDB.
+
+
+####Open a connection to the MongoDB database.
+```{r, warning=FALSE, message=FALSE}
+mongo_database <- mongo(collection = "flights_data", db = "flights_mongo")
+```
+
+
