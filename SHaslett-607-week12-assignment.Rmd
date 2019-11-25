@@ -10,6 +10,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(RMySQL)
 library(mongolite)
+library(dplyr)
+library(stringr)
 ```
 
 ##Assignment Description
@@ -24,56 +26,102 @@ Your migration process needs to be reproducible. R code is encouraged, but not r
 ###Step 1 - Import the MYSQL flights database data into R.
 
 
-####Connect to the MYSQL Flights database.
+#### Connect to the MYSQL Flights database.
 ```{r, warning=FALSE, message=FALSE}
 # Open the database connection and list the database tables. 
 connection <- dbConnect(RMySQL::MySQL(), user = 'root', password = '', dbname = 'flights', host = 'localhost')
 tables <- dbListTables(connection)
+
 tables
 ```
 
 
-####Import the MYSQL table data into R, and store it in dataframes (one per database table).
-```{r, warning=FALSE, message=FALSE}
+#### Import the MYSQL table data into R, and store it in dataframes.
+
+**_For this assignment, I am only interested in the "airlines", "airports", and "flights" tables, so I will ignore the "planes" and "weather" tables_.**
+
+```{r, eval=FALSE, warning=FALSE, message=FALSE}
 airlines <- dbReadTable(connection, 'airlines')
 airports <- dbReadTable(connection, 'airports')
 flights <- dbReadTable(connection, 'flights')
-planes <- dbReadTable(connection, 'planes')
-weather <- dbReadTable(connection, 'weather')
 
 # Close the database connection.
 dbDisconnect(connection)
 ```
 
 
-####Confirm that the database table data is now available in R.
+#### Confirm that the database table data is now available in R.
 ```{r, warning=FALSE, message=FALSE}
+
 head(airlines)
 ```
+
+
+#### Remove the carriage returns ("\r") from the "name" column of the airlines dataframe so that the data is cleaner.
+```{r, warning=FALSE, message=FALSE}
+airlines$name <- str_replace(airlines$name, '\\r', '')
+colnames(airlines)
+head(airlines)
+```
+
 
 ```{r, warning=FALSE, message=FALSE}
 head(airports)
 ```
 
+
 ```{r, warning=FALSE, message=FALSE}
 head(flights)
 ```
 
+
+### Step 2 - Import the Data into MongoDB.
+
+
+#### Prepare the flights data for insertion into the MongoDB database by merging the dataframes together.
 ```{r, warning=FALSE, message=FALSE}
-head(planes)
+# Merge the 3 dataframes (airlines, airports, and flights) together with the help of the dplyr package.
+# We create a new object (flights_data) to contain the merged data. This object will then be imported into the MongoDB database.
+
+# Add the flights dataframe to the flights_data object, and merge in the airlines dataframe.
+flights_data <- flights %>%
+  merge(airlines) %>%
+  # To prevent conflicts with the "airports" table name column, we rename the "airlines" name column to "airline".
+  rename(airline = name) %>%
+  rowwise() %>%
+  ungroup()
+
+# Now add the airports dataframe, and seperate the data into origin and destination airports.
+flights_data <- airports %>%
+  rename_(.dots = setNames(names(.), paste0('origin_', names(.)))) %>%
+  rename(origin = origin_faa) %>%
+  right_join(flights_data)
+
+flights_data <- airports %>%
+  rename_(.dots = setNames(names(.), paste0('dest_', names(.)))) %>%
+  rename(dest = dest_faa) %>%
+  right_join(flights_data)
 ```
 
-```{r, warning=FALSE, message=FALSE}
-head(weather)
-```
 
-
-###Step 2 - Import the Data into MongoDB.
-
-
-####Open a connection to the MongoDB database.
+#### Open a connection to the MongoDB database.
 ```{r, warning=FALSE, message=FALSE}
 mongo_database <- mongo(collection = "flights_data", db = "flights_mongo")
 ```
 
+#### Insert the flights data into the MongoDB database.
+```{r, warning=FALSE, message=FALSE}
+mongo_database$insert(flights_data)
+```
+
+
+####Confirm that the data has been successfully imported into MongoDB by running a query for flights flying out of JFK.
+```{r, warning=FALSE, message=FALSE}
+results <- mongo_database$find('{"origin": "JFK"}') %>%
+  group_by(airline, origin_name, dest_name) %>%
+  summarise(total_flights = n()) %>%
+  arrange(airline)
+
+results
+```
 
