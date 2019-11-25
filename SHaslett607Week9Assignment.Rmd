@@ -1,0 +1,52 @@
+---
+title: "DATA 607 Week 9 Assignment - Web APIs"
+author: "Stephen Haslett"
+date: "10/26/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Assignment Overview
+The New York Times web site provides a rich set of APIs, as described here: https://developer.nytimes.com/apis You’ll need to start by signing up for an API key.
+Your task is to choose one of the New York Times APIs, construct an interface in Python to read in the JSON data, and transform it into a pandas DataFrame.
+
+For this assignment, I chose to connect to the New York Times' Article Search API. I queried the API for articles relating to vaping deaths, and limited the search results to articles relating to the keyword "Death".
+
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+library(jsonlite)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(kableExtra)
+```
+
+###Connect to the NYT Articles API and retrieve articles relating to vaping deaths.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+api_key <- "&api-key=sm2AdtUSMtxAW5ZDlRLYAAGyYMrYGTnn"
+search_query <- "?q=vaping%20deaths"
+
+# Define filters to limit the search results.
+filters <- "&fq=document_type(article)&fq=type_of_material(News)&fq=keyword(Deaths (Fatalities))"
+
+sort_by <- "&sort=relevance"
+start <- "&begin_date=20190101"
+end <- "&end_date=20191026"
+article_endpoint <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+
+vaping_articles <- fromJSON(paste0(article_endpoint, search_query, filters, start, end, sort_by, api_key))
+results <- vaping_articles$response$docs
+```
+
+
+###Output the results in a data frame.
+```{r, eval=TRUE, message=FALSE, warning=FALSE}
+vaping_df <- data.frame('Date' = format(as.Date(results$pub_date), "%B %d, %Y"),
+                        'Headline' = results$headline$main,
+                        'Abstract' = results$abstract,
+                        'URL' = results$web_url)
+
+vaping_df %>% kable() %>% kable_styling() %>% scroll_box(width = "910px", height = "400px")
+```
