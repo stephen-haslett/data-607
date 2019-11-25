@@ -1,0 +1,50 @@
+---
+title: "Recommender Systems - Netflix"
+subtitle: "Discussion 11: Recommender Systems"
+author: "Stephen Haslett"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+***
+
+###Introduction
+
+The media streaming service Netflix utilizes a recommendation system that tailors it's extensive media catalog to the interests of individual subscribers. The recommendation system consists of a series of algorithms (based on search, ranking, similarity, ratings, etc.) that analyze the viewing habits of subscribers in order to place them into taste groups. The taste groups that a subscriber belongs to then determines what media is used to populate their home screen. 
+
+***
+
+###Customer Scenario Design Analysis
+
+**A. Who are the target users?**
+
+The target users are subscribers to the Netflix media streaming service.
+
+**B. What are their key goals?**
+
+Their key goals are to find and watch the TV shows, movies, or documentaries that are streamed via the service, and that are of interest to them, without the interruption of advertisements.
+
+**C. How can Netflix help them accomplish those goals?**
+
+Netflix has an overwhelming catalogue of media. In order to help subscribers easily find the media that they are interested in, they use a series of algorithms to refine the catalogue down to a selection of media that the subscriber is potentially interested in.
+
+***
+
+###Reverse Engineering
+
+Netflix groups viewing recommendations by genre, and displays them as a series of rows on the subscriber's home screen. This makes it easy for the subscriber to quickly decide if the recommendations that populate a row are worth watching, or if they should jump to the next row.
+
+Netflix produces its own shows now and in order to entice subscribers to watch them, they tailor the images used to represent these shows to individual subscribers. Their recommendation system builds a profile of the subscriber based on their individual viewing history, and that of the taste group they belong to. Based on this data, the system then serves up the images that are most likely to motivate the subscriber to watch a particular show.
+
+It appears that the Netflix recommendation system utilizes both user based Collaborative filtering (in that it groups subscribers into taste groups based on their viewing habits), and Content Based filtering. The content based filtering is likely used to offset the fact that the recommendation system does not have a viewing profile for new subscribers. Content based filtering can therefore be used as a catalyst for generating the viewer profiles of new subscribers.
+
+***
+
+###Recommendations for Improvement
+
+As a Netflix subscriber, I often get frustrated by the fact that their recommendation system does not place enough emphasis on the country of origin of the shows that I watch. 90% of the shows that I watch on Netflix are of European origin. However, the system fails to recognize this and continues to recommend mostly US based shows. This may be due to the fact that the content available on Netflix differs according to country. However, it would greatly enhance the subscribers viewing experience if they could take this into account for the non US shows that are available in this country. Additionally, because Netflix's recommendation system determines what content appears on my home screen based on my viewing profile, I am missing out on random shows that might be of interest to me. Introducing a "random" row on my home screen would solve this problem.
+
+
