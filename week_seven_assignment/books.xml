@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<book_list>
+  <book>
+    <book_title>1984</book_title>
+    <authors>Geogle Orwell</authors>
+    <year_published>1949</year_published>
+    <publisher>Secker and Warburg</publisher>
+    <genre>Science Fiction</genre>
+    <page_count>328</page_count>
+    <description>A dystopian novel by English novelist George Orwell.</description>
+  </book>
+  <book>
+    <book_title>A Clockwork Orange</book_title>
+    <authors>Anthony Burgess</authors>
+    <year_published>1962</year_published>
+    <publisher>William Heinemann</publisher>
+    <genre>Dystopian Fiction</genre>
+    <page_count>192</page_count>
+    <description>A dystopian satirical black comedy novel by English writer Anthony Burgess.</description>
+  </book>
+  <book>
+    <book_title>Good Omens: The Nice and Accurate Prophecies of Agnes Nutter, Witch</book_title>
+    <authors>Neil Gaiman, Terry Pratchett</authors>
+    <year_published>1990</year_published>
+    <publisher>Workman</publisher>
+    <genre>Fantasy Fiction</genre>
+    <page_count>288</page_count>
+    <description>A comedy about the birth of the son of Satan and the coming of the End Times.</description>
+  </book>
+</book_list>
+

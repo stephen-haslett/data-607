@@ -1,0 +1,29 @@
+[
+ {
+   "Title": "1984",
+   "Authors": "George Orwell",
+   "Year Published": 1949,
+   "Publisher": "Secker & Warburg",
+   "Genre": "Science Fiction",
+   "Page Count": 328,
+   "Description": "A dystopian novel by English novelist George Orwell."
+ },
+ {
+   "Title": "A Clockwork Orange",
+   "Authors": "Anthony Burgess",
+   "Year Published": 1962,
+   "Publisher": "William Heinemann",
+   "Genre": "Dystopian Fiction",
+   "Page Count": 192,
+   "Description": "A dystopian satirical black comedy novel by English writer Anthony Burgess."
+ },
+ {
+   "Title": "Good Omens: The Nice and Accurate Prophecies of Agnes Nutter, Witch",
+   "Authors": "Neil Gaiman, Terry Pratchett",
+   "Year Published": 1990,
+   "Publisher": "Workman",
+   "Genre": "Fantasy Fiction",
+   "Page Count": 288,
+   "Description": "A comedy about the birth of the son of Satan and the coming of the End Times."
+ }
+]

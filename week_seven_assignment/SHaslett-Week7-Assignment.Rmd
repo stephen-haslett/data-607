@@ -1,0 +1,89 @@
+---
+title: "DATA 607 Week 7 Assignment"
+author: "Stephen Haslett"
+date: "10/10/2019"
+output: html_document
+---
+
+<style>
+  table {
+    margin-top: 30px !important;
+    margin-bottom: 50px !important;
+  }
+  
+  #analysis-are-the-three-data-frames-identical {
+    margin-bottom: 80px !important;
+  }
+</style>
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE}
+library(RCurl)
+library(XML)
+library(jsonlite)
+library(knitr)
+library(kableExtra)
+```
+
+
+##Assignment Overview##
+Pick three of your favorite books on one of your favorite subjects. At least one of the books should have more than one author. For each book, include the title, authors, and two or three other attributes that you find interesting.
+
+Take the information that you’ve selected about these three books, and separately create three files which store the book’s information in HTML (using an html table), XML, and JSON formats (e.g. “books.html”, “books.xml”, and “books.json”).
+
+Write R code, using your packages of choice, to load the information from each of the three sources into separate R data frames. Are the three data frames identical?
+
+
+##Parse "books.html" Into A Data Frame##
+```{r, eval=TRUE}
+html_source <- getURL('https://raw.githubusercontent.com/stephen-haslett/data-607/master/week_seven_assignment/books.html')
+books_html <- readHTMLTable(html_source)
+
+# Convert the table to a data frame and remove the "NULL." values from the column titles.
+books_html <- data.frame(books_html)
+names(books_html) <- gsub("NULL.", "", names(books_html))
+books_html %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(1:3, color = "black")
+```
+
+
+```{r, eval=TRUE}
+is.data.frame(books_html)
+```
+
+
+##Parse "books.xml" Into A Data Frame##
+```{r, eval=TRUE}
+xml_source <- getURL('https://raw.githubusercontent.com/stephen-haslett/data-607/master/week_seven_assignment/books.xml')
+
+xml_parsed <- xmlParse(xml_source)
+books_xml <- xmlToDataFrame(xml_parsed)
+books_xml %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(1:3, color = "black")
+```
+
+
+```{r, eval=TRUE}
+is.data.frame(books_xml)
+```
+
+##Parse books.json Into A Data Frame##
+```{r}
+json_source <- getURL('https://raw.githubusercontent.com/stephen-haslett/data-607/master/week_seven_assignment/books.json')
+books_json <- fromJSON(json_source)
+books_json %>% kable() %>% kable_styling(bootstrap_options = c('striped', 'bordered')) %>% row_spec(1:3, color = "black")
+```
+
+
+```{r, eval=TRUE}
+is.data.frame(books_json)
+```
+
+
+##Analysis: Are the three data frames identical?##
+The 3 data frames are almost identical with the exception of the column headers. The spaces between the words in the HTML dataframe column titles have been substituted with periods, and the XML dataframe uses the XML tag names as column titles. Additionally, the column widths in the JSON data frame differ from those in both the XML and HTML dataframes, which have identical column widths.
+
+
+
+
