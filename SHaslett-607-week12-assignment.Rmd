@@ -12,6 +12,7 @@ library(RMySQL)
 library(mongolite)
 library(dplyr)
 library(stringr)
+library(kableExtra)
 ```
 
 ##Assignment Description
@@ -117,11 +118,14 @@ mongo_database$insert(flights_data)
 
 ####Confirm that the data has been successfully imported into MongoDB by running a query for flights flying out of JFK.
 ```{r, warning=FALSE, message=FALSE}
-results <- mongo_database$find('{"origin": "JFK"}') %>%
+jfk_flights <- mongo_database$find('{"origin": "JFK"}') %>%
   group_by(airline, origin_name, dest_name) %>%
   summarise(total_flights = n()) %>%
   arrange(airline)
 
-results
+kable(jfk_flights, "html", escape = F) %>%
+  kable_styling("striped", full_width = T) %>%
+  column_spec(1, bold = T)
 ```
+
 
