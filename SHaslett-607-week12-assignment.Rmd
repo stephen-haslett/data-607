@@ -129,3 +129,8 @@ kable(jfk_flights, "html", escape = F) %>%
 ```
 
 
+### Advantages and Disadvantages of storing the data in a relational database vs. a NoSQL database.
+
+The main advantage of storing this data in a NoSQL database over a relational database is the increased speed in data retrieval. Data is generally stored within a NoSQL database in denormalized form. This has an advantage over relational databases as table joins do not need to be performed everytime data is retrieved, ultimately resulting in faster data retrieval. Additionally, if the flights database continues to grow in size, and if it is opened for public access, a NoSQL database is much more scalable than a relational database and can handle the increase in size and transactions.
+
+However, if our flights database were to remain at it's current size, and remained unexposed to the public, a relational database may be a better choice. This would be especially true if we needed to write a lot of database queries in order to generate complex reports that pulled data from several different data types. 
