@@ -87,7 +87,8 @@ head(flights)
 # Add the flights dataframe to the flights_data object, and merge in the airlines dataframe.
 flights_data <- flights %>%
   merge(airlines) %>%
-  # To prevent conflicts with the "airports" table name column, we rename the "airlines" name column to "airline".
+  # To prevent conflicts with the "airports" table name column,
+  # we rename the "airlines" name column to "airline".
   rename(airline = name) %>%
   rowwise() %>%
   ungroup()
